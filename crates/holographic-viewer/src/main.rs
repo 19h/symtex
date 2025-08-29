@@ -1,41 +1,79 @@
-mod net;
-mod render;
-mod ui;
+//! Entry point for the Holographic Viewer application.
 
-use crossbeam_channel::bounded;
-use render::RenderSystem;
+use anyhow::Result;
+use holographic_viewer::app::App;
+use std::{
+    sync::Arc,
+};
+use winit::{
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    keyboard::{KeyCode, PhysicalKey},
+    window::WindowBuilder,
+};
 
-fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+fn main() -> Result<()> {
+    // Initialize logging; default to "info" if RUST_LOG is unset.
+    env_logger::Builder::from_env(
+        env_logger::Env::default().default_filter_or("info")
+    ).init();
 
-    let c2_grpc_addr = std::env::args()
-        .position(|arg| arg == "--c2-grpc-addr")
-        .and_then(|pos| std::env::args().nth(pos + 1))
-        .unwrap_or_else(|| "http://127.0.0.1:50051".to_string());
+    // Create the event loop and window.
+    let event_loop = EventLoop::new()?;
+    let window = Arc::new(
+        WindowBuilder::new()
+            .with_title("Holographic City Viewer")
+            .with_inner_size(winit::dpi::LogicalSize::new(1280, 720))
+            .build(&event_loop)?,
+    );
 
-    tracing::info!(addr = %c2_grpc_addr, "Starting holographic viewer");
+    // Initialise the application (async → sync).
+    let mut app = pollster::block_on(App::new(window.clone()))?;
 
-    // Create bounded channel for world state updates
-    let (tx, rx) = bounded(2); // Small buffer to prevent excessive memory use
+    // Load tiles; log any errors.
+    if let Err(err) = app.build_all_tiles("hypc") {
+        log::error!("Failed to build tiles: {}", err);
+    }
 
-    // Spawn network thread
-    let network_handle = net::spawn_network(c2_grpc_addr, tx);
+    // Run the winit event loop.
+    event_loop.run(move |event, elwt| {
+        elwt.set_control_flow(ControlFlow::Poll);
 
-    // Run render loop on main thread
-    let mut render_system = RenderSystem::new();
-    
-    match render_system.run_render_loop(rx) {
-        Ok(()) => tracing::info!("Render loop completed"),
-        Err(e) => {
-            tracing::error!(error = %e, "Render loop error");
-            return Err(e);
+        match event {
+            Event::WindowEvent { window_id, event } if window_id == window.id() => {
+                // Forward events to the app; handle unconsumed window events.
+                if !app.handle_event(&window, &event) {
+                    match event {
+                        WindowEvent::CloseRequested => elwt.exit(),
+                        WindowEvent::KeyboardInput { event, .. } => {
+                            if event.physical_key == PhysicalKey::Code(KeyCode::Escape) {
+                                elwt.exit();
+                            }
+                        }
+                        WindowEvent::RedrawRequested => {
+                            match app.render(&window) {
+                                Ok(_) => {}
+                                Err(wgpu::SurfaceError::Lost) => {
+                                    app.resize(app.renderer.gfx.size);
+                                }
+                                Err(wgpu::SurfaceError::OutOfMemory) => {
+                                    log::error!("WGPU out of memory – exiting.");
+                                    elwt.exit();
+                                }
+                                Err(e) => log::error!("Render error: {:?}", e),
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Event::AboutToWait => {
+                // Request a redraw each frame.
+                window.request_redraw();
+            }
+            _ => {}
         }
-    }
-
-    // Wait for network thread to complete
-    if let Err(e) = network_handle.join() {
-        tracing::error!(error = ?e, "Network thread panicked");
-    }
+    })?;
 
     Ok(())
 }

@@ -1,13 +1,31 @@
-[package] 
-name = "holographic-viewer" 
-version = "0.1.0" 
+[package]
+name = "holographic_viewer"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-api = { path = "../api" }
-tokio = { version = "1.39", features = ["rt-multi-thread", "macros"] }
-tonic = { version = "0.12", features = ["transport"] }
-crossbeam-channel = "0.5"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+# Core GPU / windowing
+wgpu = "0.20"
+winit = "0.29"
+pollster = "0.3"
+
+# Math & POD
+glam = { version = "0.28", features = ["bytemuck"] }
+bytemuck = { version = "1.14", features = ["derive"] }
+
+# UI
+egui = "0.28"
+egui-wgpu = "0.28"
+egui-winit = "0.28"
+
+# Asset loading
+walkdir = "2.5"
+
+# Utils
 anyhow = "1.0"
+log = "0.4"
+env_logger = "0.11"
+rayon = "1.10"
+
+# Local format library
+hypc = { path = "../hypc" }
