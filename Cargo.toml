@@ -2,10 +2,12 @@
 resolver = "2"
 members = [
   "crates/api",
-  "crates/sim_orchestrator",
-  "crates/sim_agent",
   "crates/holographic-viewer",
+  "crates/hypc",
   "crates/link_emulator",
+  "crates/obj2hypc",
+  "crates/sim_agent",
+  "crates/sim_orchestrator",
 ]
 
 [workspace.package]
