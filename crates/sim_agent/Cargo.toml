@@ -5,13 +5,12 @@ edition = "2021"
 
 [dependencies]
 api = { path = "../api" }
-tokio = { version = "1.39", features = ["rt-multi-thread", "macros", "signal"] }
+tokio = { version = "1.39", features = ["rt-multi-thread", "macros", "signal", "net"] }
 tokio-stream = "0.1"
 tonic = { version = "0.12", features = ["transport"] }
 bytes = "1"
 roaring = "0.10"
 uuid = { version = "1", features = ["v4"] }
-nalgebra = "0.33"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 prometheus = "0.13"
@@ -19,3 +18,17 @@ axum = "0.7"
 chrono = "0.4"
 anyhow = "1.0"
 rand = "0.8"
+thiserror = "1.0"
+futures = "0.3"
+
+# Command-line argument parsing
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Headless GPU compute for perception
+wgpu = "0.20"
+pollster = "0.3"
+
+# Vector math & GPU data alignment
+glam = { version = "0.28", features = ["bytemuck"] }
+bytemuck = { version = "1.16", features = ["derive"] }
+nalgebra = { version = "0.32", features = ["bytemuck"] }
