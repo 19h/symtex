@@ -1,0 +1,13 @@
+[package] 
+name = "holographic-viewer" 
+version = "0.1.0" 
+edition = "2021"
+
+[dependencies]
+api = { path = "../api" }
+tokio = { version = "1.39", features = ["rt-multi-thread", "macros"] }
+tonic = { version = "0.12", features = ["transport"] }
+crossbeam-channel = "0.5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+anyhow = "1.0"

@@ -1,0 +1,13 @@
+[package] 
+name = "link_emulator" 
+version = "0.1.0" 
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.39", features = ["rt-multi-thread", "macros", "net"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+prometheus = "0.13"
+axum = "0.7"
+rand = "0.8"
+anyhow = "1.0"

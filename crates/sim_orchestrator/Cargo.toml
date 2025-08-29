@@ -1,0 +1,28 @@
+[package]
+name = "sim_orchestrator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+api = { path = "../api" }
+tokio = { version = "1.39", features = ["rt-multi-thread", "macros", "signal"] }
+tonic = { version = "0.12", features = ["transport"] }
+bytes = "1"
+dashmap = "6"
+roaring = "0.10"
+prometheus = "0.13"
+axum = "0.7"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+uuid = { version = "1", features = ["v4"] }
+parking_lot = "0.12"
+futures = "0.3"
+tokio-stream = "0.1"
+anyhow = "1.0"
+chrono = "0.4"
+
+# Arrow/Flight
+arrow = "53"
+arrow-array = "53"
+arrow-schema = "53"
+arrow-flight = "53"

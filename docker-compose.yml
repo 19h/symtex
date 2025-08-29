@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  sim_orchestrator:
+    build: 
+      context: .
+      dockerfile: ./docker/orchestrator.Dockerfile
+    environment:
+      - ORCHESTRATOR_GRPC_LISTEN_ADDR=0.0.0.0:50051
+      - ORCHESTRATOR_FLIGHT_LISTEN_ADDR=0.0.0.0:50052
+      - ORCHESTRATOR_METRICS_LISTEN_ADDR=0.0.0.0:9091
+      - RUST_LOG=info
+    ports:
+      - "50051:50051"  # gRPC
+      - "50052:50052"  # Arrow Flight
+      - "9091:9091"    # Metrics
+    networks:
+      - holographic-net
+
+  link-emulator-grpc:
+    build: 
+      context: .
+      dockerfile: ./docker/emulator.Dockerfile
+    environment:
+      - EMULATOR_LISTEN_ADDR=0.0.0.0:60051
+      - EMULATOR_TARGET_ADDR=sim_orchestrator:50051
+      - EMULATOR_LATENCY_MS=100
+      - EMULATOR_JITTER_MS=20
+      - EMULATOR_METRICS_PORT=9099
+      - RUST_LOG=info
+    ports: 
+      - "60051:60051"  # Emulated gRPC
+      - "9099:9099"    # Metrics
+    depends_on: [sim_orchestrator]
+    networks:
+      - holographic-net
+
+  link-emulator-flight:
+    build: 
+      context: .
+      dockerfile: ./docker/emulator.Dockerfile
+    environment:
+      - EMULATOR_LISTEN_ADDR=0.0.0.0:60052
+      - EMULATOR_TARGET_ADDR=sim_orchestrator:50052
+      - EMULATOR_RATE_BPS=131072      # 128 KB/s
+      - EMULATOR_BUCKET_BYTES=32768   # 32 KB burst
+      - EMULATOR_LATENCY_MS=50
+      - EMULATOR_METRICS_PORT=9098
+      - RUST_LOG=info
+    ports: 
+      - "60052:60052"  # Emulated Arrow Flight
+      - "9098:9098"    # Metrics
+    depends_on: [sim_orchestrator]
+    networks:
+      - holographic-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes: 
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: 
+      - "9090:9090"
+    depends_on: [sim_orchestrator, link-emulator-grpc, link-emulator-flight]
+    networks:
+      - holographic-net
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports: 
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on: [prometheus]
+    networks:
+      - holographic-net
+
+networks:
+  holographic-net:
+    driver: bridge
