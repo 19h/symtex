@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 api = { path = "../api" }
-tokio = { version = "1.39", features = ["rt-multi-thread", "macros", "signal"] }
+tokio = { version = "1.39", features = ["rt-multi-thread", "macros", "signal", "process", "sync", "net"] }
 tonic = { version = "0.12", features = ["transport"] }
 bytes = "1"
 dashmap = "6"
@@ -17,9 +17,10 @@ tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 uuid = { version = "1", features = ["v4"] }
 parking_lot = "0.12"
 futures = "0.3"
-tokio-stream = "0.1"
+tokio-stream = { version = "0.1", features = ["sync"] }
 anyhow = "1.0"
 chrono = "0.4"
+nix = { version = "0.29", features = ["signal"] }
 
 # Arrow/Flight
 arrow = "53"
